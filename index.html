@@ -3,219 +3,276 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>카카오맵 장소 검색 서비스</title>
+    <title>📸 뮤비클립 (M/V Clip) - 덕질 성지순례</title>
+    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=ac580661fd35a89d33affdd3216b61f5&libraries=services"></script>
     
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --idol-color: #bb86fc;
+            --drama-color: #ff7675;
+            --bg-dark: #1a1a24;
         }
-        body, html {
-            width: 100%;
-            height: 100%;
-            font-family: 'Malgun Gothic', dotum, sans-serif;
-        }
-        .container {
-            display: flex;
-            width: 100%;
-            height: 100%;
-        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body, html { width: 100%; height: 100%; font-family: 'Malgun Gothic', sans-serif; overflow: hidden; }
+
+        .container { display: flex; width: 100%; height: 100%; }
+
+        /* 왼쪽 사이드바 디자인 */
         .sidebar {
-            width: 30%;
-            height: 100%;
-            padding: 20px;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            z-index: 10;
-            background-color: white;
+            width: 350px; height: 100%; background-color: var(--bg-dark); color: white;
+            display: flex; flex-direction: column; z-index: 100; box-shadow: 5px 0 15px rgba(0,0,0,0.5);
         }
-        .search-box {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+
+        .header { padding: 25px 20px; text-align: center; border-bottom: 1px solid #333; }
+        .header h1 { font-size: 24px; color: var(--idol-color); font-weight: 900; margin-bottom: 5px; }
+
+        /* 메인 탭 */
+        .main-tabs { display: flex; background: #252535; }
+        .tab-btn {
+            flex: 1; padding: 15px; border: none; background: none; color: #888;
+            cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.3s;
         }
-        .search-box input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
+        .tab-btn.active.idol { color: var(--idol-color); border-bottom: 3px solid var(--idol-color); }
+        .tab-btn.active.drama { color: var(--drama-color); border-bottom: 3px solid var(--drama-color); }
+
+        /* 서브 메뉴 (작품/아이돌 선택) */
+        .sub-menu {
+            padding: 15px; display: flex; flex-wrap: wrap; gap: 8px;
+            background: #2a2a36; max-height: 150px; overflow-y: auto;
         }
-        .search-box button {
-            padding: 10px 15px;
-            background-color: #fee500;
-            border: none;
-            border-radius: 4px;
-            font-weight: bold;
-            cursor: pointer;
+        .sub-btn {
+            padding: 6px 12px; border-radius: 20px; border: 1px solid #555;
+            background: #1a1a24; color: #ccc; font-size: 12px; cursor: pointer;
         }
-        .search-box button:hover {
-            background-color: #fada0a;
-        }
-        .result-list {
-            flex: 1;
-            overflow-y: auto;
-            list-style: none;
-        }
+        .sub-btn:hover, .sub-btn.active { background: #444; color: white; border-color: white; }
+
+        /* 리스트 영역 */
+        .result-list { flex: 1; overflow-y: auto; padding: 10px; }
         .result-item {
-            padding: 15px 10px;
-            border-bottom: 1px solid #eee;
-            cursor: pointer;
+            padding: 15px; border-bottom: 1px solid #333; cursor: pointer; transition: 0.2s;
+            border-radius: 10px; margin-bottom: 5px;
         }
-        .result-item:hover {
-            background-color: #f9f9f9;
+        .result-item:hover { background-color: #252535; }
+        .result-item h5 { font-size: 15px; color: #fff; margin-bottom: 5px; }
+        .result-item p { font-size: 12px; color: #aaa; line-height: 1.4; }
+
+        /* 오른쪽 지도 */
+        .map-area { flex: 1; height: 100%; position: relative; }
+
+        /* 로딩 화면 (캐릭터 + 말풍선) */
+        #loading-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); display: none;
+            flex-direction: column; align-items: center; justify-content: center; z-index: 1000;
         }
-        .result-item h5 {
-            font-size: 15px;
-            margin-bottom: 5px;
-            color: #333;
+        .char-container { position: relative; text-align: center; }
+        .char-img { width: 150px; height: 150px; object-fit: contain; margin-bottom: 20px; }
+        .speech-bubble {
+            background: white; color: black; padding: 15px 25px; border-radius: 30px;
+            font-weight: bold; font-size: 18px; position: relative;
         }
-        .result-item p {
-            font-size: 13px;
-            color: #666;
+        .speech-bubble::after {
+            content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
+            border-top: 10px solid white; border-left: 10px solid transparent; border-right: 10px solid transparent;
         }
-        .map-area {
-            width: 70%;
-            height: 100%;
-        }
+
+        /* 커스텀 마커 */
+        .custom-marker { font-size: 30px; cursor: pointer; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5)); }
     </style>
 </head>
 <body>
 
     <div class="container">
         <div class="sidebar">
-            <div class="search-box">
-                <input type="text" id="keyword" placeholder="장소를 입력하세요 (예: 강남역)" onkeypress="if(event.keyCode==13) searchPlaces()">
-                <button onclick="searchPlaces()">검색</button>
+            <div class="header">
+                <h1>📸 M/V Clip</h1>
+                <p style="font-size: 11px; color: #888;">최애 촬영지 성지순례 지도</p>
             </div>
-            <ul id="placesList" class="result-list"></ul>
+
+            <div class="main-tabs">
+                <button class="tab-btn active idol" onclick="switchMainTab('idol')">아이돌 뮤비</button>
+                <button class="tab-btn drama" onclick="switchMainTab('drama')">드라마/영화</button>
+            </div>
+
+            <div id="sub-menu" class="sub-menu">
+                </div>
+
+            <ul id="result-list" class="result-list">
+                </ul>
         </div>
 
-        <div id="map" class="map-area"></div>
+        <div class="map-area">
+            <div id="map" style="width:100%; height:100%;"></div>
+
+            <div id="loading-overlay">
+                <div class="char-container">
+                    <div id="speech-text" class="speech-bubble">조금만 기다려줘!</div>
+                    <img id="char-icon" class="char-img" src="https://api.dicebear.com/7.x/adventurer/svg?seed=Lucky" alt="character">
+                </div>
+            </div>
+        </div>
     </div>
 
-    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=ff3a02888d97191eb336939f8866dc39&libraries=services"></script>
-
     <script>
-        let map;
-        let ps;
-        let infowindow;
-        let markers = [];
+        let map, infowindow;
+        let currentMarkers = [];
+        let currentCategory = 'idol';
 
-        // 지도가 완전히 로드된 후 실행되도록 보장하는 안전장치
+        // 📍 데이터베이스 (아이돌 및 드라마)
+        const db = {
+            idol: {
+                "뉴진스": [
+                    { title: "Ditto 촬영지 (대구 계성중)", lat: 35.8672, lng: 128.5815, desc: "민지와 친구들이 복도를 뛰어가던 그 학교!" },
+                    { title: "Hype Boy 촬영지 (성수동 일대)", lat: 37.5443, lng: 127.0570, desc: "멤버별 에피소드가 담긴 감성 스팟" }
+                ],
+                "방탄소년단": [
+                    { title: "봄날 정류장 (주문진)", lat: 37.9054, lng: 128.8276, desc: "BTS 앨범 자켓 촬영지! 아미들의 성지" },
+                    { title: "Spring Day (일영역)", lat: 37.6917, lng: 126.9158, desc: "뷔가 철길에 귀를 기울이던 폐역" }
+                ],
+                "블랙핑크": [
+                    { title: "마지막처럼 (경희대 신전)", lat: 37.5939, lng: 127.0548, desc: "그리스 신전 느낌의 멋진 건축물 배경" }
+                ],
+                "에스파": [
+                    { title: "광야 느낌? (DDP)", lat: 37.5665, lng: 127.0092, desc: "Next Level의 미래지향적인 분위기" }
+                ]
+                // ... 에스파, 엔하이픈, 트와이스, 아일릿 등 추가 가능
+            },
+            drama: {
+                "선재 업고 튀어": [
+                    { title: "임솔 집 (카페 몽테드)", lat: 37.2882, lng: 127.0142, desc: "선재와 솔이가 마주치던 행궁동 대문 앞" },
+                    { title: "고백 장소 (방화수류정)", lat: 37.2875, lng: 127.0210, desc: "선재가 마음을 전하던 밤의 연못" }
+                ],
+                "도깨비": [
+                    { title: "주문진 방사제", lat: 37.8933, lng: 128.8322, desc: "김신이 은탁에게 메밀꽃을 주던 그곳" },
+                    { title: "도깨비 집 (운현궁 양관)", lat: 37.5759, lng: 126.9868, desc: "공유와 이동욱이 함께 살던 멋진 저택" }
+                ],
+                "Reply 1988": [
+                    { title: "인천 보건고 (운동장)", lat: 37.4851, lng: 126.6669, desc: "쌍문동 친구들이 축구하던 학교" }
+                ]
+            }
+        };
+
+        // 1. 지도 초기화
         kakao.maps.load(function() {
-            initMap();
-        });
-
-        function initMap() {
-            const mapContainer = document.getElementById('map');
-            
-            // 기본 중심좌표 (위치 거부 시 나타날 기본 서울시청 좌표)
-            const defaultOption = {
-                center: new kakao.maps.LatLng(37.566826, 126.9786567),
-                level: 5 // 확대 레벨 5
-            };
-
-            map = new kakao.maps.Map(mapContainer, defaultOption);
-            ps = new kakao.maps.services.Places();
+            const container = document.getElementById('map');
+            const options = { center: new kakao.maps.LatLng(37.5665, 126.9780), level: 5 };
+            map = new kakao.maps.Map(container, options);
             infowindow = new kakao.maps.InfoWindow({ zIndex: 1 });
 
-            // HTML5의 Geolocation으로 사용할 수 있는지 확인합니다
+            initCurrentLocation();
+            switchMainTab('idol'); // 초기값
+        });
+
+        // 2. 현재 위치 권한 허용 및 이동
+        function initCurrentLocation() {
+            showLoading("사용자의 현재 위치를<br>찾고 있어!");
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function(position) {
-                    const lat = position.coords.latitude;
-                    const lon = position.coords.longitude;
-                    const locPosition = new kakao.maps.LatLng(lat, lon);
-                    
-                    map.setCenter(locPosition);
-                    displayCurrentMarker(locPosition);
-                }, function(error) {
-                    console.log("위치 권한 제한됨: 기본 위치로 지도를 표시합니다.");
-                });
-            }
+                    const lat = position.coords.latitude, lon = position.coords.longitude;
+                    map.setCenter(new kakao.maps.LatLng(lat, lon));
+                    hideLoading();
+                }, function() { hideLoading(); });
+            } else { hideLoading(); }
         }
 
-        function displayCurrentMarker(locPosition) {
-            const marker = new kakao.maps.Marker({
-                map: map,
-                position: locPosition
+        // 3. 메인 탭 전환
+        function switchMainTab(cat) {
+            currentCategory = cat;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.tab-btn.${cat}`).classList.add('active');
+            
+            // 서브 메뉴 생성
+            const subMenu = document.getElementById('sub-menu');
+            subMenu.innerHTML = '';
+            const items = Object.keys(db[cat]);
+            
+            items.forEach(name => {
+                const btn = document.createElement('button');
+                btn.className = 'sub-btn';
+                btn.innerText = name;
+                btn.onclick = () => {
+                    document.querySelectorAll('.sub-btn').forEach(sb => sb.classList.remove('active'));
+                    btn.classList.add('active');
+                    loadLocations(cat, name);
+                };
+                subMenu.appendChild(btn);
             });
             
-            const iwContent = '<div style="padding:5px; font-size:12px; text-align:center; width:150px;">내 현재 위치</div>';
-            const locInfowindow = new kakao.maps.InfoWindow({
-                content : iwContent
-            });
+            // 첫 번째 항목 자동 로드
+            if(items.length > 0) subMenu.firstChild.click();
+        }
+
+        // 4. 특정 아이돌/드라마 장소 로드
+        function loadLocations(cat, name) {
+            showLoading(`${name} 촬영지를<br>열심히 찾고 있어!`);
             
-            locInfowindow.open(map, marker);
+            // 캐릭터 아이콘 변경 (간단 예시)
+            const charImg = document.getElementById('char-icon');
+            if(name.includes('뉴진스')) charImg.src = "https://api.dicebear.com/7.x/pixel-art/svg?seed=Powerpuff"; 
+            else if(name.includes('선재')) charImg.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=Sunjae";
+
+            setTimeout(() => {
+                const locations = db[cat][name];
+                displayPlaces(locations);
+                hideLoading();
+            }, 800);
         }
 
-        function searchPlaces() {
-            const keyword = document.getElementById('keyword').value.trim();
-
-            if (!keyword) {
-                alert('검색어를 입력해주세요!');
-                return;
-            }
-            ps.keywordSearch(keyword, placesSearchCB);
-        }
-
-        function placesSearchCB(data, status, pagination) {
-            if (status === kakao.maps.services.Status.OK) {
-                displayPlaces(data);
-            } else if (status === kakao.maps.services.Status.ZERO_RESULT) {
-                alert('검색 결과가 존재하지 않습니다.');
-            } else if (status === kakao.maps.services.Status.ERROR) {
-                alert('검색 중 오류가 발생했습니다.');
-            }
-        }
-
+        // 5. 마커 및 리스트 표시
         function displayPlaces(places) {
-            const listEl = document.getElementById('placesList');
+            const listEl = document.getElementById('result-list');
             const bounds = new kakao.maps.LatLngBounds();
-            
             clearMarkers();
             listEl.innerHTML = '';
 
-            for (let i = 0; i < places.length; i++) {
-                const placePosition = new kakao.maps.LatLng(places[i].y, places[i].x);
+            places.forEach(p => {
+                const pos = new kakao.maps.LatLng(p.lat, p.lng);
                 
-                const marker = new kakao.maps.Marker({
-                    position: placePosition,
-                    map: map
+                // 마커 생성
+                const content = document.createElement('div');
+                content.className = 'custom-marker';
+                content.innerHTML = (currentCategory === 'idol') ? '🎵' : '🎬';
+                
+                const marker = new kakao.maps.CustomOverlay({
+                    position: pos, content: content, yAnchor: 1
                 });
-                markers.push(marker);
+                marker.setMap(map);
+                currentMarkers.push(marker);
 
-                const itemEl = document.createElement('li');
-                itemEl.className = 'result-item';
-                itemEl.innerHTML = `
-                    <h5>${places[i].place_name}</h5>
-                    <p>${places[i].road_address_name ? places[i].road_address_name : places[i].address_name}</p>
-                `;
-
-                itemEl.onclick = function() {
-                    map.panTo(placePosition);
-                    infowindow.setContent('<div style="padding:5px;font-size:12px;">' + places[i].place_name + '</div>');
+                // 리스트 아이템 생성
+                const item = document.createElement('li');
+                item.className = 'result-item';
+                item.innerHTML = `<h5>${p.title}</h5><p>${p.desc}</p>`;
+                item.onclick = () => {
+                    map.panTo(pos);
+                    infowindow.setContent(`<div style="padding:10px; font-size:12px; color:black;">${p.title}</div>`);
                     infowindow.open(map, marker);
                 };
+                
+                // 마커 클릭 이벤트
+                content.onclick = () => { item.onclick(); };
 
-                kakao.maps.event.addListener(marker, 'click', function() {
-                    infowindow.setContent('<div style="padding:5px;font-size:12px;">' + places[i].place_name + '</div>');
-                    infowindow.open(map, marker);
-                });
-
-                listEl.appendChild(itemEl);
-                bounds.extend(placePosition);
-            }
+                listEl.appendChild(item);
+                bounds.extend(pos);
+            });
             map.setBounds(bounds);
         }
 
+        // 유틸리티 함수
         function clearMarkers() {
-            for (let i = 0; i < markers.length; i++) {
-                markers[i].setMap(null);
-            }
-            markers = [];
+            currentMarkers.forEach(m => m.setMap(null));
+            currentMarkers = [];
+            infowindow.close();
+        }
+
+        function showLoading(msg) {
+            document.getElementById('speech-text').innerHTML = msg;
+            document.getElementById('loading-overlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-overlay').style.display = 'none';
         }
     </script>
 </body>
