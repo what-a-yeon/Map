@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📸 뮤비클립 (M/V Clip) - 덕질 성지순례</title>
+    <title>📸 스포트라이트 (SpotLight) - 덕질 성지순례</title>
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=ff3a02888d97191eb336939f8866dc39&libraries=services"></script>
 
     <style>
@@ -11,6 +11,7 @@
             --idol-color: #bb86fc;
             --drama-color: #ff7675;
             --bg-dark: #1a1a24;
+            --success-color: #2ecc71;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -27,7 +28,7 @@
         .header { padding: 20px; text-align: center; border-bottom: 1px solid #333; }
         .header h1 { font-size: 24px; color: var(--idol-color); font-weight: 900; margin-bottom: 5px; }
 
-        /* [조건] 아이돌 뮤비 / 드라마 촬영지 메인 탭 2개 */
+        /* 메인 탭 2개 분할 */
         .main-tabs { display: flex; background: #252535; }
         .tab-btn {
             flex: 1; padding: 15px; border: none; background: none; color: #888;
@@ -37,7 +38,7 @@
         .tab-btn.active.idol { color: var(--idol-color); border-bottom: 3px solid var(--idol-color); background: #1f1f2e; }
         .tab-btn.active.drama { color: var(--drama-color); border-bottom: 3px solid var(--drama-color); background: #1f1f2e; }
 
-        /* 서브 메뉴 (작품 및 아티스트 선택 필터) */
+        /* 서브 메뉴 */
         .sub-menu {
             padding: 12px; display: flex; flex-wrap: wrap; gap: 6px;
             background: #2a2a36; max-height: 120px; overflow-y: auto;
@@ -54,27 +55,33 @@
         .result-list { flex: 1; overflow-y: auto; padding: 10px; }
         .result-item {
             padding: 15px; border-bottom: 1px solid #2d2d3d; cursor: pointer; transition: 0.2s;
-            border-radius: 8px; margin-bottom: 6px; background: #222230;
+            border-radius: 8px; margin-bottom: 6px; background: #222230; position: relative;
         }
         .result-item:hover { background-color: #2d2d3d; transform: translateY(-2px); }
         .result-item h5 { font-size: 15px; color: #fff; margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
         .result-item p { font-size: 12px; color: #bbb; line-height: 1.4; }
-        .result-item .region-badge { 
+        
+        .badge-container { display: flex; gap: 5px; margin-top: 5px; }
+        .region-badge { 
             display: inline-block; padding: 2px 6px; background: #3a3a4a; 
-            border-radius: 4px; font-size: 10px; color: #fff; margin-top: 5px;
+            border-radius: 4px; font-size: 10px; color: #fff;
+        }
+        .visited-badge {
+            display: inline-block; padding: 2px 6px; background: var(--success-color);
+            border-radius: 4px; font-size: 10px; color: #fff; font-weight: bold;
         }
 
         /* 오른쪽 지도 */
         .map-area { flex: 1; height: 100%; position: relative; }
 
-        /* [조건] 캐릭터 로딩 화면 조정을 위한 오버레이 */
+        /* 로딩 화면 오버레이 */
         #loading-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.75); display: none;
             flex-direction: column; align-items: center; justify-content: center; z-index: 1000;
         }
         .char-container { position: relative; text-align: center; display: flex; flex-direction: column; align-items: center; }
-        .char-img { width: 140px; height: 140px; object-fit: contain; margin-bottom: 15px; }
+        .char-img { width: 140px; height: 140px; object-fit: contain; margin-bottom: 15px; border-radius: 20px; }
         .speech-bubble {
             background: white; color: black; padding: 15px 25px; border-radius: 30px;
             font-weight: bold; font-size: 16px; position: relative; max-width: 300px; line-height: 1.5;
@@ -85,22 +92,31 @@
             border-top: 10px solid white; border-left: 10px solid transparent; border-right: 10px solid transparent;
         }
 
-        /* 커스텀 마커 (카메라/비디오 모티브) */
+        /* 커스텀 마커 스타일 */
         .custom-marker { font-size: 32px; cursor: pointer; filter: drop-shadow(2px 3px 3px rgba(0,0,0,0.6)); transition: transform 0.2s; }
         .custom-marker:hover { transform: scale(1.2); }
 
-        /* 카카오 지도 인포윈도우 스타일 대치 커스텀 */
-        .info-popup { padding: 10px; width: 240px; background: #fff; color: #333; border-radius: 6px; }
-        .info-popup h6 { font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #111; }
-        .info-popup p { font-size: 11px; color: #555; line-height: 1.3; margin-bottom: 8px; }
+        /* 인포윈도우 스타일 */
+        .info-popup { padding: 8px; width: 260px; background: #fff; color: #333; border-radius: 6px; }
+        .info-popup h6 { font-size: 14px; font-weight: bold; margin-bottom: 5px; color: #111; }
+        .info-popup p { font-size: 11px; color: #555; line-height: 1.4; margin-bottom: 8px; }
         
-        /* [조건] 업로드된 사진 파일을 연동하여 보여줄 가상 이미지 공간 */
+        /* 업로드된 사진 파일을 렌더링하는 영역 */
         .info-popup .photo-preview { 
-            width: 100%; height: 100px; background-color: #eaeaea; 
-            border-radius: 4px; display: flex; align-items: center; justify-content: center;
-            font-size: 11px; color: #777; font-weight: bold; overflow: hidden;
+            width: 100%; height: 140px; background-color: #eaeaea; 
+            border-radius: 4px; overflow: hidden; margin-bottom: 8px;
             background-size: cover; background-position: center;
+            border: 1px solid #ddd;
         }
+        
+        /* 방문 인증 고정 핀 생성 버튼 */
+        .visit-btn {
+            width: 100%; padding: 6px; background-color: var(--success-color); color: white;
+            border: none; border-radius: 4px; font-weight: bold; font-size: 11px; cursor: pointer;
+            transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 4px;
+        }
+        .visit-btn:hover { background-color: #27ae60; }
+        .visit-btn.checked { background-color: #7f8c8d; cursor: default; }
     </style>
 </head>
 <body>
@@ -108,8 +124,8 @@
     <div class="container">
         <div class="sidebar">
             <div class="header">
-                <h1>📸 M/V Clip</h1>
-                <p style="font-size: 11px; color: #aaa;">스포트라이트 덕질 성지순례 시스템</p>
+                <h1>📸 SpotLight</h1>
+                <p style="font-size: 11px; color: #aaa;">덕질 성지순례 미디어 매핑 시스템</p>
             </div>
 
             <div class="main-tabs">
@@ -128,7 +144,7 @@
             <div id="loading-overlay">
                 <div class="char-container">
                     <div id="speech-text" class="speech-bubble">조금만 기다려줘!</div>
-                    <img id="char-icon" class="char-img" src="https://api.dicebear.com/7.x/adventurer/svg?seed=Lucky" alt="character">
+                    <img id="char-icon" class="char-img" src="" alt="character">
                 </div>
             </div>
         </div>
@@ -138,70 +154,70 @@
         let map, infowindow;
         let currentMarkers = [];
         let currentCategory = 'idol';
+        
+        // 방문 완료한 성지순례 장소들의 ID를 기억할 배열 (고정 핀 상태 저장용)
+        let visitedPlaceIds = [];
 
-        // 📍 성지순례 통합 데이터베이스 (제공 데이터 원본 정확 반영 및 보완)
+        // 📍 성지순례 통합 데이터베이스 (전달해주신 첨부 파일 이미지 경로 및 데이터 완벽 반영)
         const db = {
             idol: {
-                "전체보기": [], // 스크립트에서 동적으로 통합 처리함
+                "전체보기": [],
                 "뉴진스": [
-                    { title: "Ditto 촬영지 (대구 계성중)", lat: 35.8672, lng: 128.5815, desc: "바니즈 필수 코스! 민지와 친구들이 교복 입고 뛰어놀던 아련한 감성의 초록 펜스 운동장", region: "지방", img: "https://api.dicebear.com/7.x/identicon/svg?seed=ditto" },
-                    { title: "Hype Boy 촬영지 (성수동)", lat: 37.5443, lng: 127.0570, desc: "멤버별 에피소드가 입혀진 성수동만의 힙하고 유니크한 복합문화 골목 투어", region: "서울", img: "https://api.dicebear.com/7.x/identicon/svg?seed=hype" }
+                    { id: "idol_nj_ditto", title: "Ditto (대구 계성중)", lat: 35.8672, lng: 128.5815, desc: "민지와 친구들이 교복을 입고 비를 피하며 뛰어가던 스산하고 아련한 분위기의 교정 대문 현관 앞", region: "지방", img: "./2022121923123073994_l.jpg" },
+                    { id: "idol_nj_hype", title: "Hype Boy (성수동 일대)", lat: 37.5443, lng: 127.0570, desc: "멤버별 스토리라인이 이국적인 색채로 채워진 성수동만의 골목 힙스팟", region: "서울", img: "https://api.dicebear.com/7.x/identicon/svg?seed=hype" }
                 ],
                 "방탄소년단": [
-                    { title: "봄날 정류장 (주문진 향호해변)", lat: 37.9054, lng: 128.8276, desc: "전설의 'You never walk alone' 앨범 자켓 촬영지이자 전 세계 아미들의 원픽 포토존", region: "지방", img: "https://api.dicebear.com/7.x/identicon/svg?seed=spring" },
-                    { title: "Spring Day MV (양주 일영역)", lat: 37.6917, lng: 126.9158, desc: "뮤직비디오 초반 오프닝에서 뷔가 눈 쌓인 철길에 귀를 기울이던 감성 가득한 간이역", region: "경기/근교", img: "https://api.dicebear.com/7.x/identicon/svg?seed=ilyeong" },
-                    { title: "Dynamite MV (용인 에버랜드)", lat: 37.2936, lng: 127.2026, desc: "레트로 팝 장르 테마에 맞추어 화려한 야간 댄스 브레이크를 선보였던 락스빌 빌리지 무대", region: "경기/근교", img: "https://api.dicebear.com/7.x/identicon/svg?seed=dynamite" },
-                    { title: "RUN MV 촬영지 (노들섬)", lat: 37.5175, lng: 126.9582, desc: "멤버들이 함께 한강을 배경으로 질주하며 청춘의 방황을 노래했던 상징적인 공간", region: "서울", img: "https://api.dicebear.com/7.x/identicon/svg?seed=run" }
+                    { id: "idol_bts_spring", title: "봄날 정류장 (주문진 향호해변)", lat: 37.9054, lng: 128.8276, desc: "푸른 동해바다를 등지고 멤버들이 옹기종기 모여 앉아 인생샷을 남겼던 전 세계 아미들의 성지", region: "지방", img: "./SSI_20190322183041.jpg" },
+                    { id: "idol_bts_run", title: "RUN / 투어스 뮤비 (노들섬)", lat: 37.5175, lng: 126.9582, desc: "끝없는 청춘의 서사를 그리며 거침없이 내달리던 강변 공간이자 투어스 신곡 촬영지", region: "서울", img: "https://api.dicebear.com/7.x/identicon/svg?seed=run" },
+                    { id: "idol_bts_dy", title: "Dynamite (용인 에버랜드)", lat: 37.2936, lng: 127.2026, desc: "레트로 팝 리듬에 맞춰 야간 디스코 칼군무를 선보였던 에버랜드 내 서구풍 락스빌 세트장", region: "경기/근교", img: "https://api.dicebear.com/7.x/identicon/svg?seed=btsdy" },
+                    { id: "idol_bts_il", title: "봄날 뮤비 (양주 일영역)", lat: 37.6917, lng: 126.9158, desc: "뮤비 도입부에서 뷔가 하얀 눈이 내려앉은 기차 철길에 내려앉아 귀를 기울이던 아날로그 간이역", region: "경기/근교", img: "https://api.dicebear.com/7.x/identicon/svg?seed=btsil" }
                 ],
                 "블랙핑크": [
-                    { title: "마지막처럼 (경희대 신전)", lat: 37.5939, lng: 127.0548, desc: "그리스 신전 모양의 화려한 대학교 대형 분수대 건축물을 배경으로 칼군무를 찍은 명소스팟", region: "서울", img: "https://api.dicebear.com/7.x/identicon/svg?seed=bp1" },
-                    { title: "뛰어(As If It's Your Last) (증산5구역)", lat: 37.5832, lng: 126.9103, desc: "뮤직비디오 속 올드 스쿨 힙합 무드의 이국적인 그라피티 벽면 가득했던 은평구 재개발 구역", region: "서울", img: "https://api.dicebear.com/7.x/identicon/svg?seed=bp2" }
-                ],
-                "투어스 (TWS)": [
-                    { title: "첫 만남은 계획대로 안 돼 (노들섬 한강공원)", lat: 37.5170, lng: 126.9575, desc: "풋풋하고 청량한 소년미를 풍기며 군무 시퀀스를 완성한 한강 중심부의 쉼터", region: "서울", img: "https://api.dicebear.com/7.x/identicon/svg?seed=tws" }
+                    { id: "idol_bp_last", title: "마지막처럼 (경희대 신전)", lat: 37.5939, lng: 127.0548, desc: "마치 로마 고대 신전을 연상케 하는 대형 분수대 건축물 앞 핑크빛 조명 아래 댄스 브레이크 현장", region: "서울", img: "./img_20170623092158_73e74768.jpg" },
+                    { id: "idol_bp_run", title: "As If It's Your Last (증산5구역)", lat: 37.5832, lng: 126.9103, desc: "자유분방한 그라피티 벽화와 키치한 컬러감이 가득했던 올드스쿨 무드의 은평구 재개발 구역", region: "서울", img: "https://api.dicebear.com/7.x/identicon/svg?seed=bp2" }
                 ],
                 "아이유": [
-                    { title: "밤편지 뮤비 (부산 문화공감 수정)", lat: 35.1292, lng: 129.0450, desc: "일본식 전통 가옥 정취 속에서 아날로그 편지를 적어 내리던 아늑하고 고즈넉한 적산가옥", region: "지방", img: "https://api.dicebear.com/7.x/identicon/svg?seed=iu1" },
-                    { title: "하루 끝 뮤비 (베네치아 부라노섬)", lat: 45.4854, lng: 12.4166, desc: "알록달록 다채로운 색감의 파스텔톤 집들이 모여 있어 뮤비 시각미를 극대화했던 해외 명소", region: "해외", img: "https://api.dicebear.com/7.x/identicon/svg?seed=iu2" }
+                    { id: "idol_iu_letter", title: "밤편지 (부산 문화공감 수정)", lat: 35.1292, lng: 129.0450, desc: "유리창 너머 빗소리를 들으며 아날로그 편지를 정갈하게 써 내려가던 전통 적산가옥 세트", region: "지방", img: "https://api.dicebear.com/7.x/identicon/svg?seed=iu1" },
+                    { id: "idol_iu_end", title: "하루 끝 (베네치아 부라노섬)", lat: 45.4854, lng: 12.4166, desc: "동화 속에 들어온 듯 알록달록 비비드한 컬러의 집들이 시선을 사로잡는 해외 유명 명소", region: "해외", img: "https://api.dicebear.com/7.x/identicon/svg?seed=iu2" }
                 ],
                 "여자친구": [
-                    { title: "귀를 기울이면 (곡성 섬진강기차마을)", lat: 35.2831, lng: 127.2982, desc: "청량 레이블답게 초록빛 자연과 옛날 증기기관차가 만나 싱그러운 여름 소리를 담아낸 기차역", region: "지방", img: "https://api.dicebear.com/7.x/identicon/svg?seed=gfriend" }
+                    { id: "idol_gfriend", title: "귀를 기울이면 (곡성 기차마을)", lat: 35.2831, lng: 127.2982, desc: "청량한 자연 숲길 사이로 옛 증기기관차가 증기를 뿜으며 지나가는 아련한 청춘의 배경지", region: "지방", img: "https://api.dicebear.com/7.x/identicon/svg?seed=gf" }
                 ],
                 "세븐틴": [
-                    { title: "Check-In MV (홍콩 초이홍 아파트)", lat: 22.3351, lng: 114.2051, desc: "힙합팀 뮤비에 등장한 무지개빛 아파트 외벽 외관 배경으로 유명한 글로벌 대표 인스타 스팟", region: "해외", img: "https://api.dicebear.com/7.x/identicon/svg?seed=svt" }
+                    { id: "idol_svt_check", title: "Check-In (홍콩 초이홍 아파트)", lat: 22.3351, lng: 114.2051, desc: "힙합팀 뮤비에 등장하여 시각적 충격을 안겨준 파스텔 무지개 톤의 대형 글로벌 아파트 빌딩 공원", region: "해외", img: "https://api.dicebear.com/7.x/identicon/svg?seed=svt" }
                 ],
                 "하이브 아티스트": [
-                    { title: "하이브 인사이트 (용산 사옥)", lat: 37.5284, lng: 126.9686, desc: "하이브 소속 아티스트들의 음악적 발자취와 감각을 미디어 전시물로 기록해둔 덕질 전용 복합공간", region: "서울", img: "https://api.dicebear.com/7.x/identicon/svg?seed=hybe" }
+                    { id: "idol_hybe", title: "하이브 인사이트 (용산 사옥)", lat: 37.5284, lng: 126.9686, desc: "아티스트들의 무대 의상, 미공개 영상, 음악적 기록들을 직접 오감으로 체험할 수 있는 전용 복합 문화공간", region: "서울", img: "https://api.dicebear.com/7.x/identicon/svg?seed=hybe" }
                 ]
             },
             drama: {
                 "전체보기": [],
                 "선재 업고 튀어": [
-                    { title: "임솔 집 대문 (수원 행궁동 카페 몽테드)", lat: 37.2882, lng: 127.0142, desc: "솔이가 노란 우산을 들고 선재와 눈맞춤하며 달려 나오던 가슴 설레는 골목길 주택 외관", region: "경기/근교", img: "https://api.dicebear.com/7.x/identicon/svg?seed=sunjae1" },
-                    { title: "선재 자전거 고백 스팟 (수원 방화수류정)", lat: 37.2875, lng: 127.0210, desc: "동화 같은 성곽 하단 연못 연출 배경으로 두 고등학생 청춘 주인공의 설렘이 폭발한 명소", region: "경기/근교", img: "https://api.dicebear.com/7.x/identicon/svg?seed=sunjae2" }
-                ],
-                "도깨비": [
-                    { title: "메밀꽃 수여 교차점 (고창 학원농장)", lat: 35.3342, lng: 126.6044, desc: "하얀 메밀꽃밭 한가운데서 공유와 김고은이 시공간을 초월해 신비로운 무드를 완성한 전설적인 장소", region: "지방", img: "https://api.dicebear.com/7.x/identicon/svg?seed=dokeb1" },
-                    { title: "도깨비 신부 소환지 (주문진 방사제)", lat: 37.8933, lng: 128.8322, desc: "빨간 목도리를 두른 은탁이 처음으로 도깨비를 의도치 않게 바닷가 앞에서 소환했던 방파제", region: "지방", img: "https://api.dicebear.com/7.x/identicon/svg?seed=dokeb2" },
-                    { title: "도깨비 하우스 (운현궁 양관)", lat: 37.5759, lng: 126.9868, desc: "도깨비와 저승사자가 한집살이하며 개그 케미를 보여주던 고급스럽고 이국적인 르네상스풍 대저택 건물", region: "서울", img: "https://api.dicebear.com/7.x/identicon/svg?seed=dokeb3" }
-                ],
-                "사랑의 불시착": [
-                    { title: "남북 주인공의 교감처 (포천 비둘기낭 폭포)", lat: 38.1065, lng: 127.1843, desc: "천연기념물 주상절리 협곡 속 신비로운 폭포로, 드라마 속에서 애틋한 회상 씬의 단골 무대로 연출됨", region: "경기/근교", img: "https://api.dicebear.com/7.x/identicon/svg?seed=crash" }
-                ],
-                "슬기로운 의사생활": [
-                    { title: "율제병원 중심 촬영처 (이대 서울병원)", lat: 37.5568, lng: 126.8378, desc: "99즈 교수 5인방이 의학 가운을 휘날리며 걸어가던 세련되고 광활한 실내 중정 로비 구조물", region: "서울", img: "https://api.dicebear.com/7.x/identicon/svg?seed=hospital" }
-                ],
-                "미스터 션샤인": [
-                    { title: "개화기 경성 거리 재현 (논산 선샤인랜드)", lat: 36.1623, lng: 127.4222, desc: "1900년대 초반 구한말 가옥들과 전차가 실제로 다니는 거리를 재현해 낸 대형 오픈 드라마 스튜디오", region: "지방", img: "https://api.dicebear.com/7.x/identicon/svg?seed=sunshine" }
+                    { id: "drama:sj_home", title: "임솔 집 대문 (행궁동 몽테드)", lat: 37.2882, lng: 127.0142, desc: "솔이가 노란 우산을 쓰고 선재에게 환한 미소로 달려 나가며 첫사랑의 시작을 알리던 파란 대문 앞", region: "경기/근교", img: "./news-p.v1.20240614.18ad0dbea83547fbb4ee7360c0b6583c_P1.jpg" },
+                    { id: "drama:sj_lake", title: "자전거 고백 (수원 방화수류정)", lat: 37.2875, lng: 127.0210, desc: "은은한 야간 성곽 조명과 연못에 비친 버드나무가 어우러져 청춘들의 진심 어린 고백을 빛내주던 곳", region: "경기/근교", img: "https://api.dicebear.com/7.x/identicon/svg?seed=sj2" }
                 ],
                 "응답하라 1988": [
-                    { title: "쌍문동 골목길 축구장 (인천 보건고)", lat: 37.4851, lng: 126.6669, desc: "덕선, 정환, 택이 등 골목길 5인방의 학창 시절 체육활동 체육대회가 촬영되었던 정겨운 교정 운동장", region: "지방", img: "https://api.dicebear.com/7.x/identicon/svg?seed=reply" }
+                    { id: "drama:reply1988", title: "쌍문동 골목 골목 (인천 보건고)", lat: 37.4851, lng: 126.6669, desc: "정환, 덕선, 택이 등 골목길 오인방의 순수했던 고교 학창 시절과 체육대회 추억이 살아 숨 쉬는 운동장 계단 단상", region: "지방", img: "./1_0002227214ms.png" }
+                ],
+                "미스터 션샤인": [
+                    { id: "drama:sunshine", title: "경성 시가지 재현 (논산 선샤인랜드)", lat: 36.1623, lng: 127.4222, desc: "1900년대 초반 구한말 개화기 의상을 직접 대여해 입고 전차가 달리는 거리 한복판에서 역사극의 주인공이 되는 공간", region: "지방", img: "./unnamed.jpg" }
+                ],
+                "사랑의 불시착": [
+                    { id: "drama:crash", title: "북한 회상 씬 배경 (포천 비둘기낭 폭포)", lat: 38.1065, lng: 127.1843, desc: "신비롭고 웅장한 천연기념물 주상절리 동굴 폭포로 현빈과 손예진의 운명적인 서사를 담아낸 공간", region: "경기/근교", img: "https://api.dicebear.com/7.x/identicon/svg?seed=crash" }
+                ],
+                "도깨비": [
+                    { id: "drama:dokebi_farm", title: "메밀꽃밭 (고창 학원농장)", lat: 35.3342, lng: 126.6044, desc: "새하얀 소금 가루를 뿌린 듯 끝없이 펼쳐진 메밀꽃 사이로 시공간의 문을 열고 공유가 소환되던 장소", region: "지방", img: "https://api.dicebear.com/7.x/identicon/svg?seed=dokeb1" },
+                    { id: "drama:dokebi_sea", title: "도깨비 소환 바다 (주문진 방사제)", lat: 37.8933, lng: 128.8322, desc: "김고은이 생일 케이크 촛불을 끄자 메밀꽃다발을 든 공유가 기적처럼 파도 앞에 서 있던 해변가", region: "지방", img: "https://api.dicebear.com/7.x/identicon/svg?seed=dokeb2" },
+                    { id: "drama:dokebi_house", title: "도깨비 하우스 (운현궁 양관)", lat: 37.5759, lng: 126.9868, desc: "도깨비와 저승사자가 시종일관 투덜대며 하우스메이트 케미를 뽐내던 고풍스러운 프랑스 르네상스식 외관 대저택", region: "서울", img: "https://api.dicebear.com/7.x/identicon/svg?seed=dokeb3" }
+                ],
+                "슬기로운 의사생활": [
+                    { id: "drama:hospital", title: "율제병원 본원 로비 (이대 서울병원)", lat: 37.5568, lng: 126.8378, desc: "의대 99즈 5인방이 메인 로비 거대한 유리 중정 아래서 아메리카노를 들고 대화를 나누던 세련된 종합병원 내부", region: "서울", img: "https://api.dicebear.com/7.x/identicon/svg?seed=hospital" }
                 ]
             }
         };
 
-        // 전체보기 탭 활성화를 위한 마스터 통합 배열 구축
-        function buildTotalList() {
+        // 데이터 초기 통합 결합 함수
+        function initMasterData() {
             for(let key in db.idol) {
                 if(key !== "전체보기") db.idol["전체보기"] = db.idol["전체보기"].concat(db.idol[key]);
             }
@@ -209,25 +225,22 @@
                 if(key !== "전체보기") db.drama["전체보기"] = db.drama["전체보기"].concat(db.drama[key]);
             }
         }
-        buildTotalList();
+        initMasterData();
 
-        // 1. 카카오 지도 정상 로딩 시 안전장치 콜백 실행
+        // 1. 카카오맵 로딩 완료 대기
         kakao.maps.load(function() {
-            const mapContainer = document.getElementById('map');
-            const mapOptions = { 
-                center: new kakao.maps.LatLng(37.5665, 126.9780), 
-                level: 5 // [조건] 확대 레벨 5 유지
-            };
-            map = new kakao.maps.Map(mapContainer, mapOptions);
+            const container = document.getElementById('map');
+            const options = { center: new kakao.maps.LatLng(37.5665, 126.9780), level: 5 };
+            map = new kakao.maps.Map(container, options);
             infowindow = new kakao.maps.InfoWindow({ zIndex: 1 });
 
-            initCurrentLocation();
-            switchMainTab('idol'); // 디폴트 실행
+            initTrackingLocation();
+            switchMainTab('idol');
         });
 
-        // 2. 권한 허용 기반 현재 위치 트래킹
-        function initCurrentLocation() {
-            showLoading("사용자의 현재 위치 위성 좌표를<br>추적하고 있어!", "Lucky");
+        // 2. 현재 위치 권한 처리
+        function initTrackingLocation() {
+            showLoading("사용자의 스마트폰 GPS 위치 권한을<br>확인하고 있어!", "https://api.dicebear.com/7.x/bottts/svg?seed=base");
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function(position) {
                     const lat = position.coords.latitude;
@@ -238,107 +251,125 @@
             } else { hideLoading(); }
         }
 
-        // 3. [조건] 상단 대분류 메인 탭 전환 컨트롤
-        function switchMainTab(category) {
-            currentCategory = category;
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`tab-${category}`).classList.add('active');
+        // 3. 메인 상위 탭 전환 시스템
+        function switchMainTab(cat) {
+            currentCategory = cat;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-${cat}`).classList.add('active');
             
             const subMenu = document.getElementById('sub-menu');
             subMenu.innerHTML = '';
-            const subCategories = Object.keys(db[category]);
+            const listItems = Object.keys(db[cat]);
             
-            subCategories.forEach(name => {
+            listItems.forEach(name => {
                 const btn = document.createElement('button');
                 btn.className = 'sub-btn';
                 btn.innerText = name;
                 btn.onclick = () => {
                     document.querySelectorAll('.sub-btn').forEach(sb => sb.classList.remove('active'));
                     btn.classList.add('active');
-                    loadLocations(category, name);
+                    loadTargetData(cat, name);
                 };
                 subMenu.appendChild(btn);
             });
             
-            if(subCategories.length > 0) subMenu.firstChild.click();
+            if(listItems.length > 0) subMenu.firstChild.click();
         }
 
-        // 4. [조건] 다른 화면 넘어가거나 선택 동선 시 전용 로딩 인디케이터 처리
-        function loadLocations(category, targetName) {
-            let loadingMessage = `🚂 [${targetName}] 성지순례 열차 정비 중...<br>조금만 기다려줘!`;
-            let characterSeed = "Lucky";
+        // 4. 로딩 시 맞춤형 캐릭터 및 말풍선 노출 컨트롤
+        function loadTargetData(cat, name) {
+            let msg = `🚂 [${name}] 성지순례 열차 탑승 중!<br>조금만 기다려줘!`;
+            // 제공해주신 일러스트 소스 성격에 맞게 다이스베어 일러스트 씨앗 세팅
+            let charUrl = "https://api.dicebear.com/7.x/adventurer/svg?seed=Lucky"; 
 
-            // [조건] 선택 콘텐츠 성격에 매칭되는 캐릭터 멘트 커스텀 변형 분기
-            if(targetName.includes("뉴진스")) {
-                loadingMessage = "🐰 버니즈 크루 소집 완료!<br>파워퍼프걸 캐릭터와 동행 중이야, 조금만 기다려줘!";
-                characterSeed = "Anoop";
-            } else if (targetName.includes("선재")) {
-                loadingMessage = "💛 노란 우산 충전 중...!<br>선재가 대문 앞에서 기다린대! 조금만 기다려줘!";
-                characterSeed = "Felix";
-            } else if (targetName.includes("방탄")) {
-                loadingMessage = "💜 아미 밤 불빛 켜는 중...!<br>보라해 정류장으로 직행할게, 조금만 기다려줘!";
-                characterSeed = "Buster";
+            if(name.includes("뉴진스")) {
+                msg = "🐰 버니즈 크루 집결 중!<br>디토 감성 충전 중이니까, 조금만 기다려줘!";
+                charUrl = "./2022121923123073994_l.jpg"; // 뉴진스 디토 오프닝 이미지 사용
+            } else if(name.includes("선재")) {
+                msg = "💛 선재가 대문 앞에서 소나기를 피하며 기다린대!<br>우산 챙기는 중이야, 조금만 기다려줘!";
+                charUrl = "./iv2G1NvI5y6VnQnHfi1YtNdoYHl9tFB2Df0UhLLSa9ZTBHUKuLDFKn75eFFr3zGlh3aguvIufhnn5WVypzLa7w.webp"; // 선재 일러스트 웹툰 포스터 연동
+            } else if(name.includes("방탄")) {
+                msg = "💜 보라빛 봄날 정류장행 열차가 출발했어!<br>방탄 소년단과 함께 가자, 조금만 기다려줘!";
+                charUrl = "./7q615Xtuc0h2yfdEMmxhzFUJV0Q.jpg"; // BT21 캐릭터 포스터 연동
+            } else if(name.includes("블랙핑크")) {
+                msg = "💖 마지막처럼 심장이 쿵쾅거리는 중!<br>블핑 아일랜드 입장 중이니, 조금만 기다려줘!";
+                charUrl = "./22U46U9MG1_1.jpg"; // 블랙핑크 피규어 캐릭터 이미지 연동
+            } else if(name.includes("세븐틴")) {
+                msg = "💎 캐럿들을 위한 무지개빛 초이홍 아파트 탐색 중!<br>팀 세븐틴 대기 중, 조금만 기다려줘!";
+                charUrl = "./file_1756961683179_152421899_llpl95.webp"; // 미니틴 캐릭터 세트 연동
             }
 
-            showLoading(loadingMessage, characterSeed);
+            showLoading(msg, charUrl);
 
             setTimeout(() => {
-                const locations = db[category][targetName];
-                displayPlaces(locations);
+                const locations = db[cat][name];
+                renderMapAndList(locations);
                 hideLoading();
-            }, 700);
+            }, 800);
         }
 
-        // 5. 지도 커스텀 오버레이 배치 및 리스트 동적 제어
-        function displayPlaces(places) {
+        // 5. 마커 렌더링 및 방문 상태에 따른 핀 가공
+        function renderMapAndList(places) {
             const listEl = document.getElementById('result-list');
             const bounds = new kakao.maps.LatLngBounds();
             clearMarkers();
             listEl.innerHTML = '';
 
-            if(places.length === 0) {
-                listEl.innerHTML = '<p style="padding:15px; font-size:12px; color:#888;">데이터를 구축하고 있습니다.</p>';
+            if(!places || places.length === 0) {
+                listEl.innerHTML = '<p style="padding:15px; font-size:12px; color:#666;">등록된 순례 코스가 없습니다.</p>';
                 return;
             }
 
-            places.forEach(place => {
-                const position = new kakao.maps.LatLng(place.lat, place.lng);
+            places.forEach(p => {
+                const pos = new kakao.maps.LatLng(p.lat, p.lng);
+                const isVisited = visitedPlaceIds.includes(p.id);
                 
                 // 마커 엘리먼트 가공
                 const markerDiv = document.createElement('div');
                 markerDiv.className = 'custom-marker';
-                markerDiv.innerHTML = (currentCategory === 'idol') ? '🎵' : '🎬';
+                
+                // [기능 추가] 성지순례를 다녀왔다면 체크 고정 핀(✅) 이미지 사용, 미방문 시 대분류별 이모지
+                markerDiv.innerHTML = isVisited ? '✅' : ((currentCategory === 'idol') ? '🎵' : '🎬');
                 
                 const overlay = new kakao.maps.CustomOverlay({
-                    position: position, content: markerDiv, yAnchor: 1
+                    position: pos, content: markerDiv, yAnchor: 1
                 });
                 overlay.setMap(map);
                 currentMarkers.push(overlay);
 
-                // 왼쪽 리스트 행 삽입
+                // 왼쪽 리스트 바인딩
                 const itemLi = document.createElement('li');
                 itemLi.className = 'result-item';
+                
+                let badgeHtml = `<span class="region-badge">${p.region}</span>`;
+                if(isVisited) {
+                    badgeHtml += `<span class="visited-badge">📍 성지순례 완료</span>`;
+                }
+
                 itemLi.innerHTML = `
-                    <h5>🚂 ${place.title}</h5>
-                    <p>${place.desc}</p>
-                    <span class="region-badge">${place.region}</span>
+                    <h5>🚂 ${p.title}</h5>
+                    <p>${p.desc}</p>
+                    <div class="badge-container">${badgeHtml}</div>
                 `;
                 
-                // [조건] 클릭 연동 시 성지순례 멘트 및 가상 업로드 사진 연계 기능 작동
+                // 리스트 아이템 클릭 액션 연동
                 itemLi.onclick = function() {
-                    map.setLevel(5);
-                    map.panTo(position);
+                    map.panTo(pos);
                     
-                    // 인포윈도우 팝업 콘텐츠 구조 바인딩
-                    const popupContent = `
+                    // 인포윈도우 내부에 사용자가 업로드한 캡처 씬 사진 가공
+                    let popupContent = `
                         <div class="info-popup">
-                            <h6>🚂 덕질 성지순례 도착!</h6>
-                            <p><b>${place.title}</b><br>${place.desc}</p>
-                            <div class="photo-preview" style="background-image: url('${place.img}');">
-                                [성지 찰칵 사진 연동]
-                            </div>
-                        </div>
+                            <h6>🚂 덕질 성지순례 코스</h6>
+                            <div class="photo-preview" style="background-image: url('${p.img}');"></div>
+                            <p><b>${p.title}</b><br>${p.desc}</p>
                     `;
+                    
+                    // 방문 버튼 상태 정의
+                    if(isVisited) {
+                        popupContent += `<button class="visit-btn checked" disabled>✓ 성지순례 도장 찍기 완료</button></div>`;
+                    } else {
+                        popupContent += `<button class="visit-btn" onclick="markAsVisited('${p.id}')">📍 다녀왔어요! 인증 핀 꽂기</button></div>`;
+                    }
                     
                     infowindow.setContent(popupContent);
                     infowindow.open(map, overlay);
@@ -346,24 +377,47 @@
                 
                 markerDiv.onclick = () => { itemLi.onclick(); };
                 listEl.appendChild(itemLi);
-                bounds.extend(position);
+                bounds.extend(pos);
             });
-            
+
             if(places.length > 0) {
                 map.setBounds(bounds);
             }
         }
 
-        // 제어용 유틸리티 펑션
+        // [기능 추가] 사용자가 다녀온 장소 고정 핀 스탬프 찍는 핸들러
+        window.markAsVisited = function(id) {
+            if(!visitedPlaceIds.includes(id)) {
+                visitedPlaceIds.push(id);
+                infowindow.close();
+                
+                // 현재 켜져 있는 서브메뉴의 활성화 탭을 수동으로 재클릭 유도하여 마커 실시간 갱신
+                const activeSubBtn = document.querySelector('.sub-btn.active');
+                if(activeSubBtn) {
+                    activeSubBtn.click();
+                }
+            }
+        }
+
+        // 유틸리티 제어 계층 함수
         function clearMarkers() {
-            currentMarkers.forEach(marker => marker.setMap(null));
+            currentMarkers.forEach(m => m.setMap(null));
             currentMarkers = [];
             infowindow.close();
         }
 
-        function showLoading(message, seed) {
-            document.getElementById('speech-text').innerHTML = message;
-            document.getElementById('char-icon').src = `https://api.dicebear.com/7.x/adventurer/svg?seed=${seed}`;
+        function showLoading(msg, imgUrl) {
+            document.getElementById('speech-text').innerHTML = msg;
+            const charIcon = document.getElementById('char-icon');
+            charIcon.src = imgUrl;
+            
+            // 만약 캐릭터 아이콘 주소가 다이스베어 svg가 아니라 실물 이미지 캡처 주소라면 둥글게 디자인 적용
+            if(imgUrl.includes('.jpg') || imgUrl.includes('.png') || imgUrl.includes('.webp')) {
+                charIcon.style.objectFit = "cover";
+            } else {
+                charIcon.style.objectFit = "contain";
+            }
+            
             document.getElementById('loading-overlay').style.display = 'flex';
         }
 
