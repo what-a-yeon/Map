@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>📸 뮤비클립 (M/V Clip) - 덕질 성지순례</title>
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=ff3a02888d97191eb336939f8866dc39&libraries=services"></script>
-    
+
     <style>
         :root {
             --idol-color: #bb86fc;
@@ -14,71 +14,93 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body, html { width: 100%; height: 100%; font-family: 'Malgun Gothic', sans-serif; overflow: hidden; }
+        body, html { width: 100%; height: 100%; font-family: 'Malgun Gothic', sans-serif; overflow: hidden; background-color: #121212; }
 
         .container { display: flex; width: 100%; height: 100%; }
 
         /* 왼쪽 사이드바 디자인 */
         .sidebar {
-            width: 350px; height: 100%; background-color: var(--bg-dark); color: white;
+            width: 380px; height: 100%; background-color: var(--bg-dark); color: white;
             display: flex; flex-direction: column; z-index: 100; box-shadow: 5px 0 15px rgba(0,0,0,0.5);
         }
 
-        .header { padding: 25px 20px; text-align: center; border-bottom: 1px solid #333; }
+        .header { padding: 20px; text-align: center; border-bottom: 1px solid #333; }
         .header h1 { font-size: 24px; color: var(--idol-color); font-weight: 900; margin-bottom: 5px; }
 
-        /* 메인 탭 */
+        /* [조건] 아이돌 뮤비 / 드라마 촬영지 메인 탭 2개 */
         .main-tabs { display: flex; background: #252535; }
         .tab-btn {
             flex: 1; padding: 15px; border: none; background: none; color: #888;
             cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.3s;
+            text-align: center;
         }
-        .tab-btn.active.idol { color: var(--idol-color); border-bottom: 3px solid var(--idol-color); }
-        .tab-btn.active.drama { color: var(--drama-color); border-bottom: 3px solid var(--drama-color); }
+        .tab-btn.active.idol { color: var(--idol-color); border-bottom: 3px solid var(--idol-color); background: #1f1f2e; }
+        .tab-btn.active.drama { color: var(--drama-color); border-bottom: 3px solid var(--drama-color); background: #1f1f2e; }
 
-        /* 서브 메뉴 (작품/아이돌 선택) */
+        /* 서브 메뉴 (작품 및 아티스트 선택 필터) */
         .sub-menu {
-            padding: 15px; display: flex; flex-wrap: wrap; gap: 8px;
-            background: #2a2a36; max-height: 150px; overflow-y: auto;
+            padding: 12px; display: flex; flex-wrap: wrap; gap: 6px;
+            background: #2a2a36; max-height: 120px; overflow-y: auto;
+            border-bottom: 1px solid #333;
         }
         .sub-btn {
-            padding: 6px 12px; border-radius: 20px; border: 1px solid #555;
-            background: #1a1a24; color: #ccc; font-size: 12px; cursor: pointer;
+            padding: 5px 10px; border-radius: 15px; border: 1px solid #555;
+            background: #1a1a24; color: #ccc; font-size: 11px; cursor: pointer;
+            transition: 0.2s;
         }
         .sub-btn:hover, .sub-btn.active { background: #444; color: white; border-color: white; }
 
         /* 리스트 영역 */
         .result-list { flex: 1; overflow-y: auto; padding: 10px; }
         .result-item {
-            padding: 15px; border-bottom: 1px solid #333; cursor: pointer; transition: 0.2s;
-            border-radius: 10px; margin-bottom: 5px;
+            padding: 15px; border-bottom: 1px solid #2d2d3d; cursor: pointer; transition: 0.2s;
+            border-radius: 8px; margin-bottom: 6px; background: #222230;
         }
-        .result-item:hover { background-color: #252535; }
-        .result-item h5 { font-size: 15px; color: #fff; margin-bottom: 5px; }
-        .result-item p { font-size: 12px; color: #aaa; line-height: 1.4; }
+        .result-item:hover { background-color: #2d2d3d; transform: translateY(-2px); }
+        .result-item h5 { font-size: 15px; color: #fff; margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+        .result-item p { font-size: 12px; color: #bbb; line-height: 1.4; }
+        .result-item .region-badge { 
+            display: inline-block; padding: 2px 6px; background: #3a3a4a; 
+            border-radius: 4px; font-size: 10px; color: #fff; margin-top: 5px;
+        }
 
         /* 오른쪽 지도 */
         .map-area { flex: 1; height: 100%; position: relative; }
 
-        /* 로딩 화면 (캐릭터 + 말풍선) */
+        /* [조건] 캐릭터 로딩 화면 조정을 위한 오버레이 */
         #loading-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); display: none;
+            background: rgba(0,0,0,0.75); display: none;
             flex-direction: column; align-items: center; justify-content: center; z-index: 1000;
         }
-        .char-container { position: relative; text-align: center; }
-        .char-img { width: 150px; height: 150px; object-fit: contain; margin-bottom: 20px; }
+        .char-container { position: relative; text-align: center; display: flex; flex-direction: column; align-items: center; }
+        .char-img { width: 140px; height: 140px; object-fit: contain; margin-bottom: 15px; }
         .speech-bubble {
             background: white; color: black; padding: 15px 25px; border-radius: 30px;
-            font-weight: bold; font-size: 18px; position: relative;
+            font-weight: bold; font-size: 16px; position: relative; max-width: 300px; line-height: 1.5;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-align: center;
         }
         .speech-bubble::after {
             content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
             border-top: 10px solid white; border-left: 10px solid transparent; border-right: 10px solid transparent;
         }
 
-        /* 커스텀 마커 */
-        .custom-marker { font-size: 30px; cursor: pointer; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5)); }
+        /* 커스텀 마커 (카메라/비디오 모티브) */
+        .custom-marker { font-size: 32px; cursor: pointer; filter: drop-shadow(2px 3px 3px rgba(0,0,0,0.6)); transition: transform 0.2s; }
+        .custom-marker:hover { transform: scale(1.2); }
+
+        /* 카카오 지도 인포윈도우 스타일 대치 커스텀 */
+        .info-popup { padding: 10px; width: 240px; background: #fff; color: #333; border-radius: 6px; }
+        .info-popup h6 { font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #111; }
+        .info-popup p { font-size: 11px; color: #555; line-height: 1.3; margin-bottom: 8px; }
+        
+        /* [조건] 업로드된 사진 파일을 연동하여 보여줄 가상 이미지 공간 */
+        .info-popup .photo-preview { 
+            width: 100%; height: 100px; background-color: #eaeaea; 
+            border-radius: 4px; display: flex; align-items: center; justify-content: center;
+            font-size: 11px; color: #777; font-weight: bold; overflow: hidden;
+            background-size: cover; background-position: center;
+        }
     </style>
 </head>
 <body>
@@ -87,19 +109,17 @@
         <div class="sidebar">
             <div class="header">
                 <h1>📸 M/V Clip</h1>
-                <p style="font-size: 11px; color: #888;">최애 촬영지 성지순례 지도</p>
+                <p style="font-size: 11px; color: #aaa;">스포트라이트 덕질 성지순례 시스템</p>
             </div>
 
             <div class="main-tabs">
-                <button class="tab-btn active idol" onclick="switchMainTab('idol')">아이돌 뮤비</button>
-                <button class="tab-btn drama" onclick="switchMainTab('drama')">드라마/영화</button>
+                <button id="tab-idol" class="tab-btn active idol" onclick="switchMainTab('idol')">아이돌 뮤비</button>
+                <button id="tab-drama" class="tab-btn drama" onclick="switchMainTab('drama')">드라마 / 영화</button>
             </div>
 
-            <div id="sub-menu" class="sub-menu">
-                </div>
+            <div id="sub-menu" class="sub-menu"></div>
 
-            <ul id="result-list" class="result-list">
-                </ul>
+            <ul id="result-list" class="result-list"></ul>
         </div>
 
         <div class="map-area">
@@ -119,155 +139,231 @@
         let currentMarkers = [];
         let currentCategory = 'idol';
 
-        // 📍 데이터베이스 (아이돌 및 드라마)
+        // 📍 성지순례 통합 데이터베이스 (제공 데이터 원본 정확 반영 및 보완)
         const db = {
             idol: {
+                "전체보기": [], // 스크립트에서 동적으로 통합 처리함
                 "뉴진스": [
-                    { title: "Ditto 촬영지 (대구 계성중)", lat: 35.8672, lng: 128.5815, desc: "민지와 친구들이 복도를 뛰어가던 그 학교!" },
-                    { title: "Hype Boy 촬영지 (성수동 일대)", lat: 37.5443, lng: 127.0570, desc: "멤버별 에피소드가 담긴 감성 스팟" }
+                    { title: "Ditto 촬영지 (대구 계성중)", lat: 35.8672, lng: 128.5815, desc: "바니즈 필수 코스! 민지와 친구들이 교복 입고 뛰어놀던 아련한 감성의 초록 펜스 운동장", region: "지방", img: "https://api.dicebear.com/7.x/identicon/svg?seed=ditto" },
+                    { title: "Hype Boy 촬영지 (성수동)", lat: 37.5443, lng: 127.0570, desc: "멤버별 에피소드가 입혀진 성수동만의 힙하고 유니크한 복합문화 골목 투어", region: "서울", img: "https://api.dicebear.com/7.x/identicon/svg?seed=hype" }
                 ],
                 "방탄소년단": [
-                    { title: "봄날 정류장 (주문진)", lat: 37.9054, lng: 128.8276, desc: "BTS 앨범 자켓 촬영지! 아미들의 성지" },
-                    { title: "Spring Day (일영역)", lat: 37.6917, lng: 126.9158, desc: "뷔가 철길에 귀를 기울이던 폐역" }
+                    { title: "봄날 정류장 (주문진 향호해변)", lat: 37.9054, lng: 128.8276, desc: "전설의 'You never walk alone' 앨범 자켓 촬영지이자 전 세계 아미들의 원픽 포토존", region: "지방", img: "https://api.dicebear.com/7.x/identicon/svg?seed=spring" },
+                    { title: "Spring Day MV (양주 일영역)", lat: 37.6917, lng: 126.9158, desc: "뮤직비디오 초반 오프닝에서 뷔가 눈 쌓인 철길에 귀를 기울이던 감성 가득한 간이역", region: "경기/근교", img: "https://api.dicebear.com/7.x/identicon/svg?seed=ilyeong" },
+                    { title: "Dynamite MV (용인 에버랜드)", lat: 37.2936, lng: 127.2026, desc: "레트로 팝 장르 테마에 맞추어 화려한 야간 댄스 브레이크를 선보였던 락스빌 빌리지 무대", region: "경기/근교", img: "https://api.dicebear.com/7.x/identicon/svg?seed=dynamite" },
+                    { title: "RUN MV 촬영지 (노들섬)", lat: 37.5175, lng: 126.9582, desc: "멤버들이 함께 한강을 배경으로 질주하며 청춘의 방황을 노래했던 상징적인 공간", region: "서울", img: "https://api.dicebear.com/7.x/identicon/svg?seed=run" }
                 ],
                 "블랙핑크": [
-                    { title: "마지막처럼 (경희대 신전)", lat: 37.5939, lng: 127.0548, desc: "그리스 신전 느낌의 멋진 건축물 배경" }
+                    { title: "마지막처럼 (경희대 신전)", lat: 37.5939, lng: 127.0548, desc: "그리스 신전 모양의 화려한 대학교 대형 분수대 건축물을 배경으로 칼군무를 찍은 명소스팟", region: "서울", img: "https://api.dicebear.com/7.x/identicon/svg?seed=bp1" },
+                    { title: "뛰어(As If It's Your Last) (증산5구역)", lat: 37.5832, lng: 126.9103, desc: "뮤직비디오 속 올드 스쿨 힙합 무드의 이국적인 그라피티 벽면 가득했던 은평구 재개발 구역", region: "서울", img: "https://api.dicebear.com/7.x/identicon/svg?seed=bp2" }
                 ],
-                "에스파": [
-                    { title: "광야 느낌? (DDP)", lat: 37.5665, lng: 127.0092, desc: "Next Level의 미래지향적인 분위기" }
+                "투어스 (TWS)": [
+                    { title: "첫 만남은 계획대로 안 돼 (노들섬 한강공원)", lat: 37.5170, lng: 126.9575, desc: "풋풋하고 청량한 소년미를 풍기며 군무 시퀀스를 완성한 한강 중심부의 쉼터", region: "서울", img: "https://api.dicebear.com/7.x/identicon/svg?seed=tws" }
+                ],
+                "아이유": [
+                    { title: "밤편지 뮤비 (부산 문화공감 수정)", lat: 35.1292, lng: 129.0450, desc: "일본식 전통 가옥 정취 속에서 아날로그 편지를 적어 내리던 아늑하고 고즈넉한 적산가옥", region: "지방", img: "https://api.dicebear.com/7.x/identicon/svg?seed=iu1" },
+                    { title: "하루 끝 뮤비 (베네치아 부라노섬)", lat: 45.4854, lng: 12.4166, desc: "알록달록 다채로운 색감의 파스텔톤 집들이 모여 있어 뮤비 시각미를 극대화했던 해외 명소", region: "해외", img: "https://api.dicebear.com/7.x/identicon/svg?seed=iu2" }
+                ],
+                "여자친구": [
+                    { title: "귀를 기울이면 (곡성 섬진강기차마을)", lat: 35.2831, lng: 127.2982, desc: "청량 레이블답게 초록빛 자연과 옛날 증기기관차가 만나 싱그러운 여름 소리를 담아낸 기차역", region: "지방", img: "https://api.dicebear.com/7.x/identicon/svg?seed=gfriend" }
+                ],
+                "세븐틴": [
+                    { title: "Check-In MV (홍콩 초이홍 아파트)", lat: 22.3351, lng: 114.2051, desc: "힙합팀 뮤비에 등장한 무지개빛 아파트 외벽 외관 배경으로 유명한 글로벌 대표 인스타 스팟", region: "해외", img: "https://api.dicebear.com/7.x/identicon/svg?seed=svt" }
+                ],
+                "하이브 아티스트": [
+                    { title: "하이브 인사이트 (용산 사옥)", lat: 37.5284, lng: 126.9686, desc: "하이브 소속 아티스트들의 음악적 발자취와 감각을 미디어 전시물로 기록해둔 덕질 전용 복합공간", region: "서울", img: "https://api.dicebear.com/7.x/identicon/svg?seed=hybe" }
                 ]
-                // ... 에스파, 엔하이픈, 트와이스, 아일릿 등 추가 가능
             },
             drama: {
+                "전체보기": [],
                 "선재 업고 튀어": [
-                    { title: "임솔 집 (카페 몽테드)", lat: 37.2882, lng: 127.0142, desc: "선재와 솔이가 마주치던 행궁동 대문 앞" },
-                    { title: "고백 장소 (방화수류정)", lat: 37.2875, lng: 127.0210, desc: "선재가 마음을 전하던 밤의 연못" }
+                    { title: "임솔 집 대문 (수원 행궁동 카페 몽테드)", lat: 37.2882, lng: 127.0142, desc: "솔이가 노란 우산을 들고 선재와 눈맞춤하며 달려 나오던 가슴 설레는 골목길 주택 외관", region: "경기/근교", img: "https://api.dicebear.com/7.x/identicon/svg?seed=sunjae1" },
+                    { title: "선재 자전거 고백 스팟 (수원 방화수류정)", lat: 37.2875, lng: 127.0210, desc: "동화 같은 성곽 하단 연못 연출 배경으로 두 고등학생 청춘 주인공의 설렘이 폭발한 명소", region: "경기/근교", img: "https://api.dicebear.com/7.x/identicon/svg?seed=sunjae2" }
                 ],
                 "도깨비": [
-                    { title: "주문진 방사제", lat: 37.8933, lng: 128.8322, desc: "김신이 은탁에게 메밀꽃을 주던 그곳" },
-                    { title: "도깨비 집 (운현궁 양관)", lat: 37.5759, lng: 126.9868, desc: "공유와 이동욱이 함께 살던 멋진 저택" }
+                    { title: "메밀꽃 수여 교차점 (고창 학원농장)", lat: 35.3342, lng: 126.6044, desc: "하얀 메밀꽃밭 한가운데서 공유와 김고은이 시공간을 초월해 신비로운 무드를 완성한 전설적인 장소", region: "지방", img: "https://api.dicebear.com/7.x/identicon/svg?seed=dokeb1" },
+                    { title: "도깨비 신부 소환지 (주문진 방사제)", lat: 37.8933, lng: 128.8322, desc: "빨간 목도리를 두른 은탁이 처음으로 도깨비를 의도치 않게 바닷가 앞에서 소환했던 방파제", region: "지방", img: "https://api.dicebear.com/7.x/identicon/svg?seed=dokeb2" },
+                    { title: "도깨비 하우스 (운현궁 양관)", lat: 37.5759, lng: 126.9868, desc: "도깨비와 저승사자가 한집살이하며 개그 케미를 보여주던 고급스럽고 이국적인 르네상스풍 대저택 건물", region: "서울", img: "https://api.dicebear.com/7.x/identicon/svg?seed=dokeb3" }
                 ],
-                "Reply 1988": [
-                    { title: "인천 보건고 (운동장)", lat: 37.4851, lng: 126.6669, desc: "쌍문동 친구들이 축구하던 학교" }
+                "사랑의 불시착": [
+                    { title: "남북 주인공의 교감처 (포천 비둘기낭 폭포)", lat: 38.1065, lng: 127.1843, desc: "천연기념물 주상절리 협곡 속 신비로운 폭포로, 드라마 속에서 애틋한 회상 씬의 단골 무대로 연출됨", region: "경기/근교", img: "https://api.dicebear.com/7.x/identicon/svg?seed=crash" }
+                ],
+                "슬기로운 의사생활": [
+                    { title: "율제병원 중심 촬영처 (이대 서울병원)", lat: 37.5568, lng: 126.8378, desc: "99즈 교수 5인방이 의학 가운을 휘날리며 걸어가던 세련되고 광활한 실내 중정 로비 구조물", region: "서울", img: "https://api.dicebear.com/7.x/identicon/svg?seed=hospital" }
+                ],
+                "미스터 션샤인": [
+                    { title: "개화기 경성 거리 재현 (논산 선샤인랜드)", lat: 36.1623, lng: 127.4222, desc: "1900년대 초반 구한말 가옥들과 전차가 실제로 다니는 거리를 재현해 낸 대형 오픈 드라마 스튜디오", region: "지방", img: "https://api.dicebear.com/7.x/identicon/svg?seed=sunshine" }
+                ],
+                "응답하라 1988": [
+                    { title: "쌍문동 골목길 축구장 (인천 보건고)", lat: 37.4851, lng: 126.6669, desc: "덕선, 정환, 택이 등 골목길 5인방의 학창 시절 체육활동 체육대회가 촬영되었던 정겨운 교정 운동장", region: "지방", img: "https://api.dicebear.com/7.x/identicon/svg?seed=reply" }
                 ]
             }
         };
 
-        // 1. 지도 초기화
+        // 전체보기 탭 활성화를 위한 마스터 통합 배열 구축
+        function buildTotalList() {
+            for(let key in db.idol) {
+                if(key !== "전체보기") db.idol["전체보기"] = db.idol["전체보기"].concat(db.idol[key]);
+            }
+            for(let key in db.drama) {
+                if(key !== "전체보기") db.drama["전체보기"] = db.drama["전체보기"].concat(db.drama[key]);
+            }
+        }
+        buildTotalList();
+
+        // 1. 카카오 지도 정상 로딩 시 안전장치 콜백 실행
         kakao.maps.load(function() {
-            const container = document.getElementById('map');
-            const options = { center: new kakao.maps.LatLng(37.5665, 126.9780), level: 5 };
-            map = new kakao.maps.Map(container, options);
+            const mapContainer = document.getElementById('map');
+            const mapOptions = { 
+                center: new kakao.maps.LatLng(37.5665, 126.9780), 
+                level: 5 // [조건] 확대 레벨 5 유지
+            };
+            map = new kakao.maps.Map(mapContainer, mapOptions);
             infowindow = new kakao.maps.InfoWindow({ zIndex: 1 });
 
             initCurrentLocation();
-            switchMainTab('idol'); // 초기값
+            switchMainTab('idol'); // 디폴트 실행
         });
 
-        // 2. 현재 위치 권한 허용 및 이동
+        // 2. 권한 허용 기반 현재 위치 트래킹
         function initCurrentLocation() {
-            showLoading("사용자의 현재 위치를<br>찾고 있어!");
+            showLoading("사용자의 현재 위치 위성 좌표를<br>추적하고 있어!", "Lucky");
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function(position) {
-                    const lat = position.coords.latitude, lon = position.coords.longitude;
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
                     map.setCenter(new kakao.maps.LatLng(lat, lon));
                     hideLoading();
                 }, function() { hideLoading(); });
             } else { hideLoading(); }
         }
 
-        // 3. 메인 탭 전환
-        function switchMainTab(cat) {
-            currentCategory = cat;
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelector(`.tab-btn.${cat}`).classList.add('active');
+        // 3. [조건] 상단 대분류 메인 탭 전환 컨트롤
+        function switchMainTab(category) {
+            currentCategory = category;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-${category}`).classList.add('active');
             
-            // 서브 메뉴 생성
             const subMenu = document.getElementById('sub-menu');
             subMenu.innerHTML = '';
-            const items = Object.keys(db[cat]);
+            const subCategories = Object.keys(db[category]);
             
-            items.forEach(name => {
+            subCategories.forEach(name => {
                 const btn = document.createElement('button');
                 btn.className = 'sub-btn';
                 btn.innerText = name;
                 btn.onclick = () => {
                     document.querySelectorAll('.sub-btn').forEach(sb => sb.classList.remove('active'));
                     btn.classList.add('active');
-                    loadLocations(cat, name);
+                    loadLocations(category, name);
                 };
                 subMenu.appendChild(btn);
             });
             
-            // 첫 번째 항목 자동 로드
-            if(items.length > 0) subMenu.firstChild.click();
+            if(subCategories.length > 0) subMenu.firstChild.click();
         }
 
-        // 4. 특정 아이돌/드라마 장소 로드
-        function loadLocations(cat, name) {
-            showLoading(`${name} 촬영지를<br>열심히 찾고 있어!`);
-            
-            // 캐릭터 아이콘 변경 (간단 예시)
-            const charImg = document.getElementById('char-icon');
-            if(name.includes('뉴진스')) charImg.src = "https://api.dicebear.com/7.x/pixel-art/svg?seed=Powerpuff"; 
-            else if(name.includes('선재')) charImg.src = "https://api.dicebear.com/7.x/avataaars/svg?seed=Sunjae";
+        // 4. [조건] 다른 화면 넘어가거나 선택 동선 시 전용 로딩 인디케이터 처리
+        function loadLocations(category, targetName) {
+            let loadingMessage = `🚂 [${targetName}] 성지순례 열차 정비 중...<br>조금만 기다려줘!`;
+            let characterSeed = "Lucky";
+
+            // [조건] 선택 콘텐츠 성격에 매칭되는 캐릭터 멘트 커스텀 변형 분기
+            if(targetName.includes("뉴진스")) {
+                loadingMessage = "🐰 버니즈 크루 소집 완료!<br>파워퍼프걸 캐릭터와 동행 중이야, 조금만 기다려줘!";
+                characterSeed = "Anoop";
+            } else if (targetName.includes("선재")) {
+                loadingMessage = "💛 노란 우산 충전 중...!<br>선재가 대문 앞에서 기다린대! 조금만 기다려줘!";
+                characterSeed = "Felix";
+            } else if (targetName.includes("방탄")) {
+                loadingMessage = "💜 아미 밤 불빛 켜는 중...!<br>보라해 정류장으로 직행할게, 조금만 기다려줘!";
+                characterSeed = "Buster";
+            }
+
+            showLoading(loadingMessage, characterSeed);
 
             setTimeout(() => {
-                const locations = db[cat][name];
+                const locations = db[category][targetName];
                 displayPlaces(locations);
                 hideLoading();
-            }, 800);
+            }, 700);
         }
 
-        // 5. 마커 및 리스트 표시
+        // 5. 지도 커스텀 오버레이 배치 및 리스트 동적 제어
         function displayPlaces(places) {
             const listEl = document.getElementById('result-list');
             const bounds = new kakao.maps.LatLngBounds();
             clearMarkers();
             listEl.innerHTML = '';
 
-            places.forEach(p => {
-                const pos = new kakao.maps.LatLng(p.lat, p.lng);
-                
-                // 마커 생성
-                const content = document.createElement('div');
-                content.className = 'custom-marker';
-                content.innerHTML = (currentCategory === 'idol') ? '🎵' : '🎬';
-                
-                const marker = new kakao.maps.CustomOverlay({
-                    position: pos, content: content, yAnchor: 1
-                });
-                marker.setMap(map);
-                currentMarkers.push(marker);
+            if(places.length === 0) {
+                listEl.innerHTML = '<p style="padding:15px; font-size:12px; color:#888;">데이터를 구축하고 있습니다.</p>';
+                return;
+            }
 
-                // 리스트 아이템 생성
-                const item = document.createElement('li');
-                item.className = 'result-item';
-                item.innerHTML = `<h5>${p.title}</h5><p>${p.desc}</p>`;
-                item.onclick = () => {
-                    map.panTo(pos);
-                    infowindow.setContent(`<div style="padding:10px; font-size:12px; color:black;">${p.title}</div>`);
-                    infowindow.open(map, marker);
+            places.forEach(place => {
+                const position = new kakao.maps.LatLng(place.lat, place.lng);
+                
+                // 마커 엘리먼트 가공
+                const markerDiv = document.createElement('div');
+                markerDiv.className = 'custom-marker';
+                markerDiv.innerHTML = (currentCategory === 'idol') ? '🎵' : '🎬';
+                
+                const overlay = new kakao.maps.CustomOverlay({
+                    position: position, content: markerDiv, yAnchor: 1
+                });
+                overlay.setMap(map);
+                currentMarkers.push(overlay);
+
+                // 왼쪽 리스트 행 삽입
+                const itemLi = document.createElement('li');
+                itemLi.className = 'result-item';
+                itemLi.innerHTML = `
+                    <h5>🚂 ${place.title}</h5>
+                    <p>${place.desc}</p>
+                    <span class="region-badge">${place.region}</span>
+                `;
+                
+                // [조건] 클릭 연동 시 성지순례 멘트 및 가상 업로드 사진 연계 기능 작동
+                itemLi.onclick = function() {
+                    map.setLevel(5);
+                    map.panTo(position);
+                    
+                    // 인포윈도우 팝업 콘텐츠 구조 바인딩
+                    const popupContent = `
+                        <div class="info-popup">
+                            <h6>🚂 덕질 성지순례 도착!</h6>
+                            <p><b>${place.title}</b><br>${place.desc}</p>
+                            <div class="photo-preview" style="background-image: url('${place.img}');">
+                                [성지 찰칵 사진 연동]
+                            </div>
+                        </div>
+                    `;
+                    
+                    infowindow.setContent(popupContent);
+                    infowindow.open(map, overlay);
                 };
                 
-                // 마커 클릭 이벤트
-                content.onclick = () => { item.onclick(); };
-
-                listEl.appendChild(item);
-                bounds.extend(pos);
+                markerDiv.onclick = () => { itemLi.onclick(); };
+                listEl.appendChild(itemLi);
+                bounds.extend(position);
             });
-            map.setBounds(bounds);
+            
+            if(places.length > 0) {
+                map.setBounds(bounds);
+            }
         }
 
-        // 유틸리티 함수
+        // 제어용 유틸리티 펑션
         function clearMarkers() {
-            currentMarkers.forEach(m => m.setMap(null));
+            currentMarkers.forEach(marker => marker.setMap(null));
             currentMarkers = [];
             infowindow.close();
         }
 
-        function showLoading(msg) {
-            document.getElementById('speech-text').innerHTML = msg;
+        function showLoading(message, seed) {
+            document.getElementById('speech-text').innerHTML = message;
+            document.getElementById('char-icon').src = `https://api.dicebear.com/7.x/adventurer/svg?seed=${seed}`;
             document.getElementById('loading-overlay').style.display = 'flex';
         }
 
